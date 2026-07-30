@@ -176,8 +176,14 @@ st.markdown(custom_css, unsafe_allow_html=True)
 
 # ---------------- 4. 大模型客户端与数据管理 ----------------
 # ⚠️ 请确保填入真实的 API Key
+import streamlit as st
+from openai import OpenAI
+
+# 优先读取 Secrets 中的 Key，如果没有配置则读取本地默认 Key
+api_key = st.secrets.get("DEEPSEEK_API_KEY", "你的默认KEY")
+
 client = OpenAI(
-    api_key="sk-8******************************5", 
+    api_key=api_key,
     base_url="https://api.deepseek.com"
 )
 
