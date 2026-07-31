@@ -109,16 +109,16 @@ def save_database(db):
     except:
         pass
 
-api_key = "sk-8af6747811354405b2dd56738b0609b5"
+api_key = "ark-dccbbfe2-ee90-43c2-914c-7bac589bfd2d-75676"
 try:
     if "DEEPSEEK_API_KEY" in st.secrets:
-        api_key = st.secrets["DEEPSEEK_API_KEY"]
+        api_key = st.secrets["$ARK_API_KEY"]
 except:
     pass
 
 client = OpenAI(
-    api_key=api_key if api_key else "sk-placeholder", 
-    base_url="https://api.deepseek.com"
+    api_key=api_key if api_key else "ark-dccbbfe2-ee90-43c2-914c-7bac589bfd2d-75676", 
+    base_url="https://ark.cn-beijing.volces.com/api/v3/responses"
 )
 
 # 优化后的生成函数：精简提示词 + 限制 max_tokens
