@@ -129,15 +129,14 @@ def generate_word_card(word):
       "word": "{word}",
       "phonetic": "国际音标（英/美）",
       "meaning": "中文意思（包含词性）",
-      "variations": "单词常见变化（如动词三单、过去式、过去分词、名词复数等，若无则填无）",
-      "phrases": ["常用词组1", "常用词组2", "常用词组3"],
+      "phrases": ["常用词组1", "常用词组2", "常用词组3,常用词组4"],
       "usage": "常用方法、语法考点或易混淆点说明",
       "example": "包含该单词的高频例句（附中文翻译）"
     }}
     """
     try:
         response = client.chat.completions.create(
-            model="deepseek-chat",  # 如果在火山引擎运行，建议替换为你的推理接入点ID，如 ep-xxxxx
+            model="doubao-seed-2-0-lite-260428",  # 如果在火山引擎运行，建议替换为你的推理接入点ID，如 ep-xxxxx
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
             max_tokens=300
