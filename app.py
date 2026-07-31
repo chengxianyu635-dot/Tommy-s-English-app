@@ -1,6 +1,5 @@
 import json
 import os
-import random
 from datetime import datetime
 import streamlit as st
 from openai import OpenAI
@@ -13,7 +12,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ---------------- 2. Taste Skill 风格：高端无瑕的现代 UI CSS ----------------
+# ---------------- 2. 界面 CSS 样式 ----------------
 taste_skill_css = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
@@ -23,14 +22,12 @@ html, body, [class*="css"], .stMarkdown, p, div {
     color: #0f172a;
 }
 
-/* 全局容器与微调留白 */
 .block-container {
     padding-top: 2rem !important;
     padding-bottom: 3rem !important;
     max-width: 1050px !important;
 }
 
-/* 现代主义指标卡片（无粗暴阴影，纯粹精细边框与呼吸感） */
 .stat-card {
     background: #ffffff;
     border: 1px solid #e2e8f0;
@@ -39,11 +36,6 @@ html, body, [class*="css"], .stMarkdown, p, div {
     text-align: left;
     box-shadow: 0 1px 3px rgba(0,0,0,0.02);
     margin-bottom: 12px;
-    transition: all 0.2s ease;
-}
-.stat-card:hover {
-    border-color: #cbd5e1;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
 }
 .stat-title {
     font-size: 0.75rem;
@@ -59,7 +51,6 @@ html, body, [class*="css"], .stMarkdown, p, div {
     margin-top: 4px;
 }
 
-/* 高级感操作按钮（去高饱和渐变，采用沉稳的黑灰与精致交互） */
 div.stButton > button {
     width: 100%;
     border-radius: 10px !important;
@@ -70,23 +61,19 @@ div.stButton > button {
     font-size: 0.9rem !important;
     padding: 0.6rem 1rem !important;
     transition: all 0.2s ease !important;
-    box-shadow: none !important;
 }
 div.stButton > button:hover {
     background-color: #334155 !important;
     border-color: #334155 !important;
 }
 
-/* 极致干净的折叠卡片 */
 .stExpander {
     border-radius: 12px !important;
     background: #ffffff !important;
     border: 1px solid #e2e8f0 !important;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.01) !important;
     margin-bottom: 14px !important;
 }
 
-/* 精致的胶囊标签 */
 .word-badge {
     display: inline-block;
     padding: 5px 12px;
@@ -97,11 +84,6 @@ div.stButton > button:hover {
     color: #334155;
     font-size: 0.85rem;
     font-weight: 500;
-    transition: all 0.15s ease;
-}
-.word-badge:hover {
-    background: #f1f5f9;
-    border-color: #cbd5e1;
 }
 </style>
 """
@@ -139,17 +121,15 @@ client = OpenAI(
     base_url="https://api.deepseek.com"
 )
 
+# 优化后的生成函数：精简提示词 + 限制 max_tokens
 def generate_word_card(word):
     prompt = f"""
-    【TASTE-SKILL 审美规范启用】：拒绝机械化、毫无灵魂的 AI 生成痕迹。输出必须极简、精准、极具结构美感。不要有任何解释性废话前缀或后缀。
-    请为英语单词 "{word}" 提供详细的学习卡片信息，必须严格按照以下 JSON 格式返回，不要包含 markdown 标记：
+    请为英语单词 "{word}" 提供极简的学习卡片信息，严格按照以下 JSON 格式返回，不要包含 markdown 标记：
     {{
       "word": "{word}",
       "phonetic": "国际音标（英/美）",
       "meaning": "中文意思（包含词性）",
-      "roots": "词根/前缀/后缀分解及逻辑",
-      "memory_hook": "趣味谐音/联想/图像记忆小窍门",
-      "phrases": ["常用词组1", "常用词组2"],
+      "phrases": ["常用词组1", "常用词组2", "常用词组3"],
       "usage": "常用方法、语法考点或易混淆点说明",
       "example": "包含该单词的高频例句（附中文翻译）"
     }}
@@ -158,7 +138,8 @@ def generate_word_card(word):
         response = client.chat.completions.create(
             model="deepseek-chat",
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.3
+            temperature=0.3,
+            max_tokens=300  # 限制最大输出 Token，防止溢出和高额消耗
         )
         content = response.choices[0].message.content.strip()
         if content.startswith("```json"):
@@ -168,47 +149,6 @@ def generate_word_card(word):
         return json.loads(content)
     except:
         return None
-
-def generate_story_from_words(selected_words):
-    try:
-        prompt = f"【TASTE-SKILL 审美规范启用】：采用高级、幽默且富有洞察力的现代文学风格。禁止使用“从前”、“这是一个关于...”等老套的人工智能开头，直接切入核心情节。不要输出任何解释性的废话。\n请用以下英文单词编写一段短故事（100字左右）：{', '.join(selected_words)}。生词加粗，附带优雅的中文翻译。"
-        response = client.chat.completions.create(
-            model="deepseek-chat",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.7
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        return f"生成故事失败: {e}"
-
-def evaluate_user_sentence(word, user_sentence):
-    try:
-        prompt = f"【TASTE-SKILL 审美规范启用】：你是一位品味极高、一针见血的常春藤语言学导师。点评要犀利、优雅，去掉过度热情的机器人口吻（比如不要说“你做得很好！”）。\n目标单词: '{word}'\n用户句子: '{user_sentence}'\n请提供：1.评分(0-100) 2.语法纠错 3.地道高级润色。"
-        response = client.chat.completions.create(
-            model="deepseek-chat",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.3
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        return f"评估失败: {e}"
-
-def generate_quiz_question(word_item):
-    try:
-        prompt = f"【TASTE-SKILL 审美规范启用】：出题要巧妙、有逻辑陷阱，不要出那种一眼就能看穿的无聊题目。解析要简明扼要，直击痛点，拒绝啰嗦。\n根据单词 '{word_item['word']}'({word_item['meaning']}) 出一道选择填空题。严格返回 JSON: {{\n\"question\": \"句子...\",\n\"options\": [\"正确词\", \"干扰1\", \"干扰2\", \"干扰3\"],\n\"answer\": \"正确词\",\n\"explanation\": \"解析\"\n}}"
-        response = client.chat.completions.create(
-            model="deepseek-chat",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.5
-        )
-        content = response.choices[0].message.content.strip()
-        if content.startswith("```json"):
-            content = content[7:-3].strip()
-        elif content.startswith("```"):
-            content = content[3:-3].strip()
-        return json.loads(content)
-    except:
-        return {"question": f"What is the meaning of {word_item['word']}?", "options": [word_item['word'], "A", "B", "C"], "answer": word_item['word'], "explanation": "默认测验"}
 
 # ---------------- 4. 侧边栏交互 ----------------
 with st.sidebar:
@@ -273,9 +213,8 @@ with c4:
 
 st.markdown("---")
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "📖 词库", "🎴 闪卡", "🪄 故事", "✍️ 造句", "⚔️ 测验"
-])
+# 只保留 词库 和 闪卡 两个核心 Tab
+tab1, tab2 = st.tabs(["📖 词库", "🎴 闪卡"])
 
 with tab1:
     if not current_db:
@@ -295,21 +234,21 @@ with tab1:
                         st.audio(f"https://dict.youdao.com/dictvoice?audio={item['word']}&type=2", format="audio/mp3")
                         
                         st.markdown(f"**【释义】** {item.get('meaning', '')}")
-                        if item.get('roots'):
-                            st.markdown(f"**【词根拆解】** 🧩 {item['roots']}")
-                        if item.get('memory_hook'):
-                            st.markdown(f"**【记忆窍门】** 🧠 {item['memory_hook']}")
                         
+                        # 仅保留常用词组
                         phrases = item.get('phrases', [])
                         if phrases:
                             st.markdown(f"**【常用词组】** " + " | ".join([f"`{p}`" for p in phrases]))
+                            
                         if item.get('usage'):
                             st.markdown(f"**【用法考点】** {item.get('usage', '')}")
                         
                         st.info(f"高频例句：_{item.get('example', '')}_")
+                        st.markdown("---")
 
 with tab2:
-    if not all_items: st.warning("请先添加单词。")
+    if not all_items: 
+        st.warning("请先添加单词。")
     else:
         if 'idx' not in st.session_state: st.session_state.idx = 0
         if 'ans' not in st.session_state: st.session_state.ans = False
@@ -317,6 +256,8 @@ with tab2:
         st.markdown(f"<h2 style='text-align: center;'>{card['word']}</h2>", unsafe_allow_html=True)
         if st.session_state.ans:
             st.success(card.get('meaning', ''))
+            if card.get('phrases'):
+                st.info("常用词组: " + " | ".join(card['phrases']))
         if st.button("翻转卡片"):
             st.session_state.ans = not st.session_state.ans
             st.rerun()
@@ -324,28 +265,3 @@ with tab2:
             st.session_state.idx += 1
             st.session_state.ans = False
             st.rerun()
-
-with tab3:
-    if len(all_words) < 2: st.warning("至少需要2个词。")
-    else:
-        sel = st.multiselect("选词：", all_words, default=all_words[:min(2, len(all_words))])
-        if st.button("生成故事"): st.markdown(generate_story_from_words(sel))
-
-with tab4:
-    if not all_words: st.warning("请添加词汇。")
-    else:
-        t = st.selectbox("选词", all_words)
-        s = st.text_area("造句：")
-        if st.button("提交"): st.markdown(evaluate_user_sentence(t, s))
-
-with tab5:
-    if not all_items: st.warning("词库为空。")
-    else:
-        if st.button("换一题") or 'q' not in st.session_state:
-            st.session_state.q = generate_quiz_question(random.choice(all_items))
-        q = st.session_state.q
-        st.subheader(q['question'])
-        ans = st.radio("选项", q['options'])
-        if st.button("验证"):
-            if ans == q['answer']: st.success("正确！")
-            else: st.error(f"错误，答案是 {q['answer']}")
