@@ -127,7 +127,7 @@ def save_database(db):
     except:
         pass
 
-api_key = ""
+api_key = "sk-8af6747811354405b2dd56738b0609b5"
 try:
     if "DEEPSEEK_API_KEY" in st.secrets:
         api_key = st.secrets["DEEPSEEK_API_KEY"]
