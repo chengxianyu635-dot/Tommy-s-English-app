@@ -111,7 +111,7 @@ def save_database(db):
 
 api_key = "ark-dccbbfe2-ee90-43c2-914c-7bac589bfd2d-75676"
 try:
-    if "DEEPSEEK_API_KEY" in st.secrets:
+    if "ARK_API_KEY" in st.secrets:
         api_key = st.secrets["ARK_API_KEY"]
 except:
     pass
