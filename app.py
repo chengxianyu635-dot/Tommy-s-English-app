@@ -5,80 +5,107 @@ from datetime import datetime
 import streamlit as st
 from openai import OpenAI
 
-# ---------------- 1. 页面基本配置与移动端视口优化 ----------------
+# ---------------- 1. 页面基本配置 ----------------
 st.set_page_config(
-    page_title="AI 英语智能灵动游乐场",
-    page_icon="🎮",
+    page_title="AI 英语智能词汇空间",
+    page_icon="⚡",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# ---------------- 2. 引入字体与移动端自适应 CSS ----------------
-responsive_css = """
+# ---------------- 2. Taste Skill 风格：高端无瑕的现代 UI CSS ----------------
+taste_skill_css = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 
 html, body, [class*="css"], .stMarkdown, p, div {
-    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    color: #0f172a;
 }
 
+/* 全局容器与微调留白 */
 .block-container {
-    padding-top: 1rem !important;
-    padding-bottom: 2rem !important;
-    max-width: 100% !important;
+    padding-top: 2rem !important;
+    padding-bottom: 3rem !important;
+    max-width: 1050px !important;
 }
 
+/* 现代主义指标卡片（无粗暴阴影，纯粹精细边框与呼吸感） */
 .stat-card {
     background: #ffffff;
     border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 12px;
-    text-align: center;
-    box-shadow: 0 4px 0 #cbd5e1;
-    margin-bottom: 10px;
+    border-radius: 14px;
+    padding: 16px;
+    text-align: left;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    margin-bottom: 12px;
+    transition: all 0.2s ease;
+}
+.stat-card:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
 }
 .stat-title {
     font-size: 0.75rem;
     color: #64748b;
     font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 .stat-value {
-    font-size: 1.2rem;
-    color: #1e293b;
-    font-weight: 800;
+    font-size: 1.35rem;
+    color: #0f172a;
+    font-weight: 700;
+    margin-top: 4px;
 }
 
+/* 高级感操作按钮（去高饱和渐变，采用沉稳的黑灰与精致交互） */
 div.stButton > button {
     width: 100%;
-    border-radius: 12px !important;
-    border: none !important;
-    background: linear-gradient(180deg, #6366f1 0%, #4f46e5 100%) !important;
-    color: white !important;
-    font-weight: 700 !important;
+    border-radius: 10px !important;
+    border: 1px solid #0f172a !important;
+    background-color: #0f172a !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
     padding: 0.6rem 1rem !important;
-    box-shadow: 0 4px 0 #3730a3 !important;
+    transition: all 0.2s ease !important;
+    box-shadow: none !important;
+}
+div.stButton > button:hover {
+    background-color: #334155 !important;
+    border-color: #334155 !important;
 }
 
+/* 极致干净的折叠卡片 */
 .stExpander {
     border-radius: 12px !important;
-    background: rgba(255, 255, 255, 0.95) !important;
+    background: #ffffff !important;
     border: 1px solid #e2e8f0 !important;
-    margin-bottom: 12px !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.01) !important;
+    margin-bottom: 14px !important;
 }
 
+/* 精致的胶囊标签 */
 .word-badge {
     display: inline-block;
-    padding: 4px 10px;
-    margin: 3px;
-    background: #f1f5f9;
+    padding: 5px 12px;
+    margin: 4px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
     border-radius: 8px;
     color: #334155;
     font-size: 0.85rem;
-    font-weight: 600;
+    font-weight: 500;
+    transition: all 0.15s ease;
+}
+.word-badge:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
 }
 </style>
 """
-st.markdown(responsive_css, unsafe_allow_html=True)
+st.markdown(taste_skill_css, unsafe_allow_html=True)
 
 # ---------------- 3. 数据安全加载 ----------------
 DB_FILE = "my_english_words.json"
@@ -100,7 +127,7 @@ def save_database(db):
     except:
         pass
 
-api_key = "sk-8af6747811354405b2dd56738b0609b5"
+api_key = ""
 try:
     if "DEEPSEEK_API_KEY" in st.secrets:
         api_key = st.secrets["DEEPSEEK_API_KEY"]
@@ -108,12 +135,13 @@ except:
     pass
 
 client = OpenAI(
-    api_key=api_key if api_key else "sk-8af6747811354405b2dd56738b0609b5", 
+    api_key=api_key if api_key else "sk-placeholder", 
     base_url="https://api.deepseek.com"
 )
 
 def generate_word_card(word):
     prompt = f"""
+    【TASTE-SKILL 审美规范启用】：拒绝机械化、毫无灵魂的 AI 生成痕迹。输出必须极简、精准、极具结构美感。不要有任何解释性废话前缀或后缀。
     请为英语单词 "{word}" 提供详细的学习卡片信息，必须严格按照以下 JSON 格式返回，不要包含 markdown 标记：
     {{
       "word": "{word}",
@@ -143,7 +171,7 @@ def generate_word_card(word):
 
 def generate_story_from_words(selected_words):
     try:
-        prompt = f"请用以下英文单词编写一段幽默的短故事（100字左右）：{', '.join(selected_words)}。生词加粗，附带中文翻译。"
+        prompt = f"【TASTE-SKILL 审美规范启用】：采用高级、幽默且富有洞察力的现代文学风格。禁止使用“从前”、“这是一个关于...”等老套的人工智能开头，直接切入核心情节。不要输出任何解释性的废话。\n请用以下英文单词编写一段短故事（100字左右）：{', '.join(selected_words)}。生词加粗，附带优雅的中文翻译。"
         response = client.chat.completions.create(
             model="deepseek-chat",
             messages=[{"role": "user", "content": prompt}],
@@ -155,7 +183,7 @@ def generate_story_from_words(selected_words):
 
 def evaluate_user_sentence(word, user_sentence):
     try:
-        prompt = f"目标单词: '{word}'\n用户句子: '{user_sentence}'\n请像外教一样点评：1.评分(0-100) 2.语法纠错 3.地道润色。"
+        prompt = f"【TASTE-SKILL 审美规范启用】：你是一位品味极高、一针见血的常春藤语言学导师。点评要犀利、优雅，去掉过度热情的机器人口吻（比如不要说“你做得很好！”）。\n目标单词: '{word}'\n用户句子: '{user_sentence}'\n请提供：1.评分(0-100) 2.语法纠错 3.地道高级润色。"
         response = client.chat.completions.create(
             model="deepseek-chat",
             messages=[{"role": "user", "content": prompt}],
@@ -167,7 +195,7 @@ def evaluate_user_sentence(word, user_sentence):
 
 def generate_quiz_question(word_item):
     try:
-        prompt = f"根据单词 '{word_item['word']}'({word_item['meaning']}) 出一道选择填空题。严格返回 JSON: {{\n\"question\": \"句子...\",\n\"options\": [\"正确词\", \"干扰1\", \"干扰2\", \"干扰3\"],\n\"answer\": \"正确词\",\n\"explanation\": \"解析\"\n}}"
+        prompt = f"【TASTE-SKILL 审美规范启用】：出题要巧妙、有逻辑陷阱，不要出那种一眼就能看穿的无聊题目。解析要简明扼要，直击痛点，拒绝啰嗦。\n根据单词 '{word_item['word']}'({word_item['meaning']}) 出一道选择填空题。严格返回 JSON: {{\n\"question\": \"句子...\",\n\"options\": [\"正确词\", \"干扰1\", \"干扰2\", \"干扰3\"],\n\"answer\": \"正确词\",\n\"explanation\": \"解析\"\n}}"
         response = client.chat.completions.create(
             model="deepseek-chat",
             messages=[{"role": "user", "content": prompt}],
@@ -184,7 +212,7 @@ def generate_quiz_question(word_item):
 
 # ---------------- 4. 侧边栏交互 ----------------
 with st.sidebar:
-    st.header("🔥 连续打卡")
+    st.subheader("🔥 连续打卡")
     if 'streak_days' not in st.session_state: st.session_state.streak_days = 1
     if 'last_checkin' not in st.session_state: st.session_state.last_checkin = None
     
@@ -198,21 +226,21 @@ with st.sidebar:
             st.rerun()
 
     st.markdown("---")
-    st.header("➕ 添加生词")
+    st.subheader("➕ 添加生词")
     new_word = st.text_input("输入英文单词：").strip()
     if st.button("✨ AI 一键解析"):
         if not new_word:
             st.warning("请输入有效单词！")
         else:
             if not api_key:
-                st.error("请先在云端 Secrets 配置 DEEPSEEK_API_KEY！")
+                st.error("请先配置 DEEPSEEK_API_KEY！")
             else:
                 db = load_database()
                 first_letter = new_word[0].upper()
                 if first_letter in db and any(item['word'].lower() == new_word.lower() for item in db[first_letter]):
                     st.info("单词已存在！")
                 else:
-                    with st.spinner("AI 正在生成卡片..."):
+                    with st.spinner("AI 正在构建卡片..."):
                         card_data = generate_word_card(new_word)
                         if card_data:
                             if first_letter not in db: db[first_letter] = []
@@ -224,7 +252,9 @@ with st.sidebar:
                             st.error("生成失败，请检查 API Key。")
 
 # ---------------- 5. 主界面 ----------------
-st.title("🎮 英语智能词汇空间")
+st.title("⚡ 英语智能词汇空间")
+st.caption("Designed with Taste & Precision")
+st.markdown(" ")
 
 current_db = load_database()
 all_items = [item for letter in current_db.keys() for item in current_db[letter]]
@@ -270,7 +300,6 @@ with tab1:
                         if item.get('memory_hook'):
                             st.markdown(f"**【记忆窍门】** 🧠 {item['memory_hook']}")
                         
-                        # ✨ 恢复的常用词组与用法考点
                         phrases = item.get('phrases', [])
                         if phrases:
                             st.markdown(f"**【常用词组】** " + " | ".join([f"`{p}`" for p in phrases]))
