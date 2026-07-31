@@ -121,7 +121,7 @@ client = OpenAI(
     base_url="https://ark.cn-beijing.volces.com/api/v3"
 )
 
-# 包含 variations 字段的生成函数
+# 生成函数：已移除 variations，将 phrases 调整为 4 个元素
 def generate_word_card(word):
     prompt = f"""
     请为英语单词 "{word}" 提供极简的学习卡片信息，严格按照以下 JSON 格式返回，不要包含 markdown 标记：
@@ -129,14 +129,14 @@ def generate_word_card(word):
       "word": "{word}",
       "phonetic": "国际音标（英/美）",
       "meaning": "中文意思（包含词性）",
-      "phrases": ["常用词组1", "常用词组2", "常用词组3,常用词组4"],
+      "phrases": ["常用词组1", "常用词组2", "常用词组3", "常用词组4"],
       "usage": "常用方法、语法考点或易混淆点说明",
       "example": "包含该单词的高频例句（附中文翻译）"
     }}
     """
     try:
         response = client.chat.completions.create(
-            model="doubao-seed-2-0-lite-260428",  # 如果在火山引擎运行，建议替换为你的推理接入点ID，如 ep-xxxxx
+            model="doubao-seed-2-0-lite-260428", 
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
             max_tokens=300
@@ -147,7 +147,7 @@ def generate_word_card(word):
         elif content.startswith("```"):
             content = content[3:-3].strip()
         return json.loads(content)
-    except:
+    except Exception as e:
         return None
 
 # ---------------- 4. 侧边栏交互 ----------------
@@ -186,7 +186,7 @@ with st.sidebar:
                             if first_letter not in db: db[first_letter] = []
                             db[first_letter].append(card_data)
                             save_database(db)
-                            st.success(f"成功添加！")
+                            st.success("成功添加！")
                             st.rerun()
                         else:
                             st.error("生成失败，请检查 API Key 或模型配置。")
@@ -213,7 +213,6 @@ with c4:
 
 st.markdown("---")
 
-# 只保留 词库 和 闪卡 两个核心 Tab
 tab1, tab2 = st.tabs(["📖 词库", "🎴 闪卡"])
 
 with tab1:
@@ -235,12 +234,7 @@ with tab1:
                         
                         st.markdown(f"**【释义】** {item.get('meaning', '')}")
                         
-                        # 显示常见变化
-                        variations = item.get('variations', '')
-                        if variations:
-                            st.markdown(f"**【常见变化】** 🔄 {variations}")
-                        
-                        # 常用词组
+                        # 显示 4 个常用词组
                         phrases = item.get('phrases', [])
                         if phrases:
                             st.markdown(f"**【常用词组】** " + " | ".join([f"`{p}`" for p in phrases]))
@@ -261,8 +255,6 @@ with tab2:
         st.markdown(f"<h2 style='text-align: center;'>{card['word']}</h2>", unsafe_allow_html=True)
         if st.session_state.ans:
             st.success(card.get('meaning', ''))
-            if card.get('variations'):
-                st.info(f"常见变化: {card['variations']}")
             if card.get('phrases'):
                 st.info("常用词组: " + " | ".join(card['phrases']))
         if st.button("翻转卡片"):
